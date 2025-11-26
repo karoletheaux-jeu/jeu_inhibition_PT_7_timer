@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Escape dos Padrões - Jogo de Inibição (Versão Curta)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="30" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="70" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="70" cy="80" r="2.5" fill="rgba(255,255,255,0.1)"/></svg>');
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header .subtitle {
+            font-size: 0.75em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 15px;
+        }
+        
+        .game-instructions {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        
+        .challenge-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        
+        .challenge-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .challenge-card h3 {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        
+        .challenge-card p {
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .opposite-colors-guide {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.5);
+        }
+
+        .opposite-colors-guide h4 {
+            font-size: 1em;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #333;
+        }
+
+        .color-pairs {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-pair {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .color-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 2px solid white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+
+        .color-red { background: linear-gradient(135deg, #ff6b6b, #ee5a52); }
+        .color-green { background: linear-gradient(135deg, #51cf66, #37b24d); }
+        .color-blue { background: linear-gradient(135deg, #4dabf7, #339af0); }
+        .color-yellow { background: linear-gradient(135deg, #ffd43b, #fab005); }
+        
+        .text-vermelho { color: #ff6b6b !important; }
+        .text-verde { color: #51cf66 !important; }
+        .text-azul { color: #4dabf7 !important; }
+        .text-amarelo { color: #ffd43b !important; }
+        
+        .game-area {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.75em;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .status-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 10px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .timer-display {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            padding: 6px 12px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            font-weight: bold;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .challenge-instruction {
+            text-align: center;
+            color: white;
+            font-size: 1em;
+            margin: 15px 0;
+            padding: 0 10px;
+            font-weight: 500;
+        }
+        
+        .word-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: white;
+            margin: 20px 0;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            font-size: 0.9em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            touch-action: manipulation;
+            min-width: 100px;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-width: 280px;
+            margin: 15px auto;
+        }
+        
+        .color-option {
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid white;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            touch-action: manipulation;
+        }
+        
+        .color-option:active {
+            transform: scale(0.95);
+        }
+        
+        .game-feedback {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            animation: fadeInUp 0.3s;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        .feedback-correct {
+            background: linear-gradient(135deg, #51cf66, #37b24d);
+            color: white;
+        }
+        
+        .feedback-incorrect {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+        }
+        
+        .results-screen {
+            text-align: center;
+        }
+        
+        .final-score {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+            font-size: 1.2em;
+        }
+        
+        .performance-metrics {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .improvement-tips {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #51cf66;
+        }
+        
+        .improvement-tips h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        @media (max-width: 400px) {
+            .header h1 {
+                font-size: 1.2em;
+            }
+            
+            .word-display {
+                font-size: 2em;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.8em;
+                min-width: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Ecrã de Boas-Vindas -->
+        <div id="welcome-screen" class="content">
+            <div class="header">
+                <h1>🧠 Escape dos Padrões</h1>
+                <p class="subtitle">Jogo de Inibição Cognitiva (Versão Curta)</p>
+            </div>
+            
+            <div style="padding: 15px;">
+                <div class="game-instructions">
+                    <p><strong>🎯 Objetivo:</strong> Complete 7 sequências de desafios de inibição cognitiva</p>
+                    <p><strong>📚 Cada sequência:</strong> 3 desafios (Antónimos → Cores Opostas → Stroop)</p>
+                    <p><strong>🎮 Total:</strong> 21 desafios (7 sequências × 3 desafios)</p>
+                    <p><strong>❤️ Vidas:</strong> 3 vidas (perde uma vida por erro)</p>
+                    <p><strong>⏱️ Tempo:</strong> Responda o mais rápido possível!</p>
+                </div>
+                
+                <div class="challenge-grid">
+                    <div class="challenge-card">
+                        <h3>🔤 Desafio 1: Antónimos</h3>
+                        <p>Veja uma palavra e escolha o seu <strong>antónimo</strong></p>
+                        <p style="font-size: 0.75em; color: #999; margin-top: 8px;">Exemplo: Vê "QUENTE" → Clique "FRIO"</p>
+                    </div>
+                    
+                    <div class="challenge-card">
+                        <h3>🎨 Desafio 2: Cores Opostas</h3>
+                        <p>Veja uma cor e escolha a sua <strong>cor oposta</strong></p>
+                        <p style="font-size: 0.85em; color: #333; margin-top: 8px; font-weight: bold;">
+                            ⚠️ Vermelho ↔ Verde | Azul ↔ Amarelo
+                        </p>
+                        <p style="font-size: 0.75em; color: #999; margin-top: 5px;">Exemplo: Vê vermelho → Clique verde</p>
+                    </div>
+                    
+                    <div class="challenge-card">
+                        <h3>🌈 Desafio 3: Teste de Stroop</h3>
+                        <p>Veja um nome de cor escrito noutra cor</p>
+                        <p>Clique na <strong>cor da tinta</strong>, NÃO na palavra!</p>
+                        <p style="font-size: 0.75em; color: #999; margin-top: 8px;">Exemplo: Palavra "AZUL" em vermelho → Clique vermelho</p>
+                    </div>
+                </div>
+
+                <div class="opposite-colors-guide" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4)); border: 3px solid rgba(102, 126, 234, 0.8);">
+                    <h4 style="font-size: 1.2em; font-weight: bold;">🎨 GUIA DE CORES OPOSTAS 🎨</h4>
+                    <div class="color-pairs">
+                        <div class="color-pair" style="font-size: 1em;">
+                            <div class="color-box color-red" style="width: 40px; height: 40px;"></div>
+                            <span style="font-size: 1.2em;">⟷</span>
+                            <div class="color-box color-green" style="width: 40px; height: 40px;"></div>
+                            <span style="font-weight: bold;">Vermelho ⟷ Verde</span>
+                        </div>
+                        <div class="color-pair" style="font-size: 1em;">
+                            <div class="color-box color-blue" style="width: 40px; height: 40px;"></div>
+                            <span style="font-size: 1.2em;">⟷</span>
+                            <div class="color-box color-yellow" style="width: 40px; height: 40px;"></div>
+                            <span style="font-weight: bold;">Azul ⟷ Amarelo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="startGame()">🚀 Iniciar Jogo</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ecrã de Jogo -->
+        <div id="game-screen" class="content hidden">
+            <div class="header">
+                <h1>🧠 Escape dos Padrões</h1>
+                <p class="subtitle">Jogo de Inibição Cognitiva</p>
+            </div>
+            
+            <div style="padding: 15px;">
+                <div class="game-area" id="game-area">
+                    <div class="status-panel">
+                        <div class="status-item"><span id="current-level">1/7 - Antónimos</span></div>
+                        <div class="status-item">Pontuação: <span id="current-score">0</span></div>
+                        <div class="status-item" id="lives-hearts">❤️❤️❤️</div>
+                        <div class="timer-display" id="timer-display">0.0s</div>
+                    </div>
+                    
+                    <div id="challenge-content"></div>
+                    
+                    <div class="game-feedback hidden" id="game-feedback"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ecrã de Resultados -->
+        <div id="results-screen" class="content hidden">
+            <div class="header">
+                <h1>📊 Resultados</h1>
+                <p class="subtitle">Análise do Desempenho</p>
+            </div>
+            
+            <div style="padding: 15px;" class="results-screen">
+                <div class="final-score">
+                    <div style="font-size: 3em; margin-bottom: 10px;">🏆</div>
+                    <div>Pontuação Final</div>
+                    <div style="font-size: 2.5em; margin-top: 10px;" id="final-score">0</div>
+                    <div style="font-size: 0.9em; margin-top: 10px; opacity: 0.9;" id="completion-status">-</div>
+                </div>
+                
+                <div class="performance-metrics">
+                    <h4 style="text-align: center; margin-bottom: 15px; color: #667eea;">📈 Métricas de Desempenho</h4>
+                    <div class="metric-row">
+                        <span class="metric-label">Taxa de Sucesso</span>
+                        <span class="metric-value" id="success-rate">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Erros de Inibição</span>
+                        <span class="metric-value" id="inhibition-errors">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Desafio Antónimos</span>
+                        <span class="metric-value" id="antonym-score">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Desafio Cores Opostas</span>
+                        <span class="metric-value" id="color-inverse-score">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Desafio Stroop</span>
+                        <span class="metric-value" id="stroop-score">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Tempo Médio de Resposta</span>
+                        <span class="metric-value" id="avg-response-time">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Velocidade de Inibição</span>
+                        <span class="metric-value" id="inhibition-speed">-</span>
+                    </div>
+                </div>
+                
+                <div class="improvement-tips" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-left: 4px solid #667eea;">
+                    <h4>🔬 Análise Ortopedagógica</h4>
+                    <div id="clinical-analysis" style="font-size: 0.8em; line-height: 1.6; color: #666;"></div>
+                </div>
+                
+                <div class="improvement-tips">
+                    <h4>💡 Conselhos de Melhoria</h4>
+                    <div id="improvement-tips" style="font-size: 0.8em; line-height: 1.6; color: #666;"></div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="restartGame()">🔄 Jogar Novamente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado do jogo
+        let currentSequence = 1;  // Séquence actuelle (1-7)
+        let currentChallengeInSequence = 0;  // Défi dans la séquence (0-2)
+        let currentScore = 0;
+        let lives = 3;
+        const MAX_SEQUENCES = 7;
+        const CHALLENGES_PER_SEQUENCE = 3;
+        const STARTING_LIVES = 3;
+        
+        // Variáveis do temporizador
+        let challengeStartTime = 0;
+        let timerInterval = null;
+        
+        const challenges = ['antonym', 'color-inverse', 'stroop'];
+        const challengeNames = ['Antónimos', 'Cores Opostas', 'Stroop'];
+        
+        let gameStats = {
+            totalAttempts: 0,
+            successfulAttempts: 0,
+            inhibitionErrors: 0,
+            antonymChallenges: { 
+                attempts: 0, 
+                success: 0,
+                responseTimes: []
+            },
+            colorInverseChallenges: { 
+                attempts: 0, 
+                success: 0,
+                responseTimes: []
+            },
+            stroopChallenges: { 
+                attempts: 0, 
+                success: 0,
+                responseTimes: []
+            }
+        };
+        
+        // Pares de antónimos em português
+        const antonymPairs = [
+            ['QUENTE', 'FRIO'], ['ALTO', 'BAIXO'], ['GRANDE', 'PEQUENO'],
+            ['FORTE', 'FRACO'], ['RÁPIDO', 'LENTO'], ['DIA', 'NOITE'],
+            ['ABERTO', 'FECHADO'], ['CHEIO', 'VAZIO'], ['INÍCIO', 'FIM'],
+            ['RICO', 'POBRE'], ['JOVEM', 'VELHO'], ['CLARO', 'ESCURO'],
+            ['DURO', 'MOLE'], ['FÁCIL', 'DIFÍCIL'], ['LIMPO', 'SUJO'],
+            ['PESADO', 'LEVE'], ['COMPRIDO', 'CURTO'], ['LARGO', 'ESTREITO']
+        ];
+        
+        // Pares de cores e palavras para teste de Stroop
+        const colors = ['vermelho', 'verde', 'azul', 'amarelo'];
+        const colorClasses = ['color-red', 'color-green', 'color-blue', 'color-yellow'];
+        
+        function startGame() {
+            currentSequence = 1;
+            currentChallengeInSequence = 0;
+            currentScore = 0;
+            lives = STARTING_LIVES;
+            
+            stopTimer();
+            
+            gameStats = {
+                totalAttempts: 0,
+                successfulAttempts: 0,
+                inhibitionErrors: 0,
+                antonymChallenges: { 
+                    attempts: 0, 
+                    success: 0,
+                    responseTimes: []
+                },
+                colorInverseChallenges: { 
+                    attempts: 0, 
+                    success: 0,
+                    responseTimes: []
+                },
+                stroopChallenges: { 
+                    attempts: 0, 
+                    success: 0,
+                    responseTimes: []
+                }
+            };
+            
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            updateUI();
+            startCurrentChallenge();
+        }
+        
+        function updateUI() {
+            const challengeName = challengeNames[currentChallengeInSequence];
+            document.getElementById('current-level').textContent = `${currentSequence}/7 - ${challengeName}`;
+            document.getElementById('current-score').textContent = currentScore;
+            
+            const heartsContainer = document.getElementById('lives-hearts');
+            heartsContainer.innerHTML = '❤️'.repeat(lives) + '🖤'.repeat(STARTING_LIVES - lives);
+        }
+        
+        function startTimer() {
+            challengeStartTime = Date.now();
+            stopTimer();
+            
+            document.getElementById('timer-display').textContent = '0.0s';
+            
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - challengeStartTime) / 1000;
+                document.getElementById('timer-display').textContent = elapsed.toFixed(1) + 's';
+            }, 100);
+        }
+        
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        
+        function getResponseTime() {
+            stopTimer();
+            return (Date.now() - challengeStartTime) / 1000;
+        }
+        
+        function startAntonymChallenge() {
+            const pair = antonymPairs[Math.floor(Math.random() * antonymPairs.length)];
+            const displayedWord = pair[0];
+            const correctAnswer = pair[1];
+            
+            const shuffledOptions = [...pair].sort(() => Math.random() - 0.5);
+            
+            const content = `
+                <div class="challenge-instruction">
+                    Escolha o ANTÓNIMO de:
+                </div>
+                <div class="word-display">${displayedWord}</div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="checkAntonym('${shuffledOptions[0]}', '${correctAnswer}')">${shuffledOptions[0]}</button>
+                    <button class="btn btn-primary" onclick="checkAntonym('${shuffledOptions[1]}', '${correctAnswer}')">${shuffledOptions[1]}</button>
+                </div>
+            `;
+            
+            document.getElementById('challenge-content').innerHTML = content;
+            startTimer();
+        }
+        
+        function checkAntonym(selected, correct) {
+            const responseTime = getResponseTime();
+            gameStats.totalAttempts++;
+            gameStats.antonymChallenges.attempts++;
+            gameStats.antonymChallenges.responseTimes.push(responseTime);
+            
+            if (selected === correct) {
+                handleCorrectAnswer(responseTime);
+                gameStats.successfulAttempts++;
+                gameStats.antonymChallenges.success++;
+            } else {
+                handleIncorrectAnswer();
+                gameStats.inhibitionErrors++;
+            }
+        }
+        
+        function startColorInverseChallenge() {
+            const colorIndex = Math.floor(Math.random() * 4);
+            
+            // Calcul correct des couleurs opposées
+            // 0 (vermelho) ↔ 1 (verde)
+            // 2 (azul) ↔ 3 (amarelo)
+            let inverseIndex;
+            if (colorIndex === 0) inverseIndex = 1;      // vermelho → verde
+            else if (colorIndex === 1) inverseIndex = 0; // verde → vermelho
+            else if (colorIndex === 2) inverseIndex = 3; // azul → amarelo
+            else inverseIndex = 2;                        // amarelo → azul
+            
+            const displayColor = colorClasses[colorIndex];
+            const correctColor = colors[inverseIndex];
+            
+            const content = `
+                <div class="challenge-instruction">
+                    Escolha a COR OPOSTA de:
+                </div>
+                <div style="width: 100px; height: 100px; margin: 20px auto; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);" class="${displayColor}"></div>
+                <div class="color-options">
+                    ${colors.map(color => `
+                        <div class="color-option ${colorClasses[colors.indexOf(color)]}" onclick="checkColorInverse('${color}', '${correctColor}')">
+                            ${color.toUpperCase()}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('challenge-content').innerHTML = content;
+            startTimer();
+        }
+        
+        function checkColorInverse(selected, correct) {
+            const responseTime = getResponseTime();
+            gameStats.totalAttempts++;
+            gameStats.colorInverseChallenges.attempts++;
+            gameStats.colorInverseChallenges.responseTimes.push(responseTime);
+            
+            if (selected === correct) {
+                handleCorrectAnswer(responseTime);
+                gameStats.successfulAttempts++;
+                gameStats.colorInverseChallenges.success++;
+            } else {
+                handleIncorrectAnswer();
+                gameStats.inhibitionErrors++;
+            }
+        }
+        
+        function startStroopChallenge() {
+            const wordIndex = Math.floor(Math.random() * 4);
+            let colorIndex;
+            do {
+                colorIndex = Math.floor(Math.random() * 4);
+            } while (colorIndex === wordIndex);
+            
+            const word = colors[wordIndex];
+            const displayColor = colorClasses[colorIndex];
+            const correctColor = colors[colorIndex];
+            
+            const content = `
+                <div class="challenge-instruction">
+                    Clique na COR DA TINTA (não na palavra):
+                </div>
+                <div class="word-display text-${correctColor}" style="background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2);">
+                    ${word.toUpperCase()}
+                </div>
+                <div class="color-options">
+                    ${colors.map(color => `
+                        <div class="color-option ${colorClasses[colors.indexOf(color)]}" onclick="checkStroop('${color}', '${correctColor}')">
+                            ${color.toUpperCase()}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('challenge-content').innerHTML = content;
+            startTimer();
+        }
+        
+        function checkStroop(selected, correct) {
+            const responseTime = getResponseTime();
+            gameStats.totalAttempts++;
+            gameStats.stroopChallenges.attempts++;
+            gameStats.stroopChallenges.responseTimes.push(responseTime);
+            
+            if (selected === correct) {
+                handleCorrectAnswer(responseTime);
+                gameStats.successfulAttempts++;
+                gameStats.stroopChallenges.success++;
+            } else {
+                handleIncorrectAnswer();
+                gameStats.inhibitionErrors++;
+            }
+        }
+        
+        function handleCorrectAnswer(responseTime) {
+            currentScore += Math.round(100 - (responseTime * 10));
+            showFeedback(`✅ Correto! +${Math.round(100 - (responseTime * 10))} pts (${responseTime.toFixed(2)}s)`, true);
+            
+            setTimeout(() => {
+                advanceLevel();
+            }, 1500);
+        }
+        
+        function handleIncorrectAnswer() {
+            lives--;
+            showFeedback('❌ Errado! -1 vida', false);
+            
+            if (lives <= 0) {
+                setTimeout(() => {
+                    endGame();
+                }, 1500);
+            } else {
+                setTimeout(() => {
+                    advanceLevel();
+                }, 1500);
+            }
+        }
+        
+        function showFeedback(message, isCorrect) {
+            const feedback = document.getElementById('game-feedback');
+            feedback.textContent = message;
+            feedback.className = `game-feedback ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
+            feedback.classList.remove('hidden');
+            
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+            }, 1400);
+        }
+        
+        function startCurrentChallenge() {
+            updateUI();
+            const challengeType = challenges[currentChallengeInSequence];
+            
+            switch(challengeType) {
+                case 'antonym':
+                    startAntonymChallenge();
+                    break;
+                case 'color-inverse':
+                    startColorInverseChallenge();
+                    break;
+                case 'stroop':
+                    startStroopChallenge();
+                    break;
+            }
+        }
+        
+        function advanceLevel() {
+            // Avancer au défi suivant dans la séquence
+            currentChallengeInSequence++;
+            
+            // Si on a terminé les 3 défis de la séquence
+            if (currentChallengeInSequence >= CHALLENGES_PER_SEQUENCE) {
+                currentChallengeInSequence = 0;
+                currentSequence++;
+                
+                // Si on a terminé toutes les séquences
+                if (currentSequence > MAX_SEQUENCES) {
+                    endGame();
+                    return;
+                }
+            }
+            
+            startCurrentChallenge();
+        }
+        
+        function endGame() {
+            stopTimer();
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+            
+            displayResults();
+        }
+        
+        function displayResults() {
+            document.getElementById('final-score').textContent = currentScore;
+            
+            const totalChallengesCompleted = (currentSequence - 1) * 3 + currentChallengeInSequence;
+            const sequencesCompleted = Math.floor(totalChallengesCompleted / 3);
+            
+            const completionStatus = lives > 0 && currentSequence > MAX_SEQUENCES
+                ? `🎉 Completou todas as 7 sequências! (21/21 desafios)` 
+                : `😔 Completou ${sequencesCompleted} sequências completas (${totalChallengesCompleted}/21 desafios)`;
+            document.getElementById('completion-status').textContent = completionStatus;
+            
+            const successRate = ((gameStats.successfulAttempts / gameStats.totalAttempts) * 100).toFixed(1);
+            document.getElementById('success-rate').textContent = successRate + '%';
+            
+            document.getElementById('inhibition-errors').textContent = gameStats.inhibitionErrors;
+            
+            // Pontuações por desafio
+            const antonymRate = gameStats.antonymChallenges.attempts > 0 
+                ? ((gameStats.antonymChallenges.success / gameStats.antonymChallenges.attempts) * 100).toFixed(1) + '%'
+                : 'N/A';
+            document.getElementById('antonym-score').textContent = antonymRate;
+            
+            const colorInverseRate = gameStats.colorInverseChallenges.attempts > 0 
+                ? ((gameStats.colorInverseChallenges.success / gameStats.colorInverseChallenges.attempts) * 100).toFixed(1) + '%'
+                : 'N/A';
+            document.getElementById('color-inverse-score').textContent = colorInverseRate;
+            
+            const stroopRate = gameStats.stroopChallenges.attempts > 0 
+                ? ((gameStats.stroopChallenges.success / gameStats.stroopChallenges.attempts) * 100).toFixed(1) + '%'
+                : 'N/A';
+            document.getElementById('stroop-score').textContent = stroopRate;
+            
+            // Tempo médio de resposta
+            const allResponseTimes = [
+                ...gameStats.antonymChallenges.responseTimes,
+                ...gameStats.colorInverseChallenges.responseTimes,
+                ...gameStats.stroopChallenges.responseTimes
+            ];
+            const avgResponseTime = allResponseTimes.length > 0 
+                ? (allResponseTimes.reduce((a, b) => a + b, 0) / allResponseTimes.length).toFixed(2) + 's'
+                : 'N/A';
+            document.getElementById('avg-response-time').textContent = avgResponseTime;
+            
+            // Velocidade de inibição
+            const inhibitionSpeed = avgResponseTime !== 'N/A' && parseFloat(avgResponseTime) < 2.0 ? 'Rápida ⚡' 
+                : avgResponseTime !== 'N/A' && parseFloat(avgResponseTime) < 3.5 ? 'Moderada 🚶' 
+                : 'Lenta 🐌';
+            document.getElementById('inhibition-speed').textContent = inhibitionSpeed;
+            
+            // Análise ortopedagógica
+            generateClinicalAnalysis(parseFloat(successRate), parseFloat(avgResponseTime), gameStats);
+            
+            // Conselhos de melhoria
+            generateImprovementTips(parseFloat(successRate), gameStats);
+        }
+        
+        function generateClinicalAnalysis(successRate, avgTime, stats) {
+            let analysis = '';
+            
+            // Análise da taxa de sucesso
+            if (successRate >= 85) {
+                analysis += '<p><strong>✅ Controlo Inibitório:</strong> Excelente. Demonstra forte capacidade de suprimir respostas automáticas.</p>';
+            } else if (successRate >= 70) {
+                analysis += '<p><strong>✓ Controlo Inibitório:</strong> Bom. Capacidade adequada de inibição com margem para melhoria.</p>';
+            } else if (successRate >= 50) {
+                analysis += '<p><strong>⚠ Controlo Inibitório:</strong> Moderado. Dificuldades ocasionais em suprimir respostas automáticas.</p>';
+            } else {
+                analysis += '<p><strong>⚠️ Controlo Inibitório:</strong> Necessita treino. Dificuldade consistente em inibir respostas impulsivas.</p>';
+            }
+            
+            // Análise da velocidade
+            if (avgTime < 2.0) {
+                analysis += '<p><strong>⚡ Velocidade de Processamento:</strong> Rápida. Boa automatização cognitiva.</p>';
+            } else if (avgTime < 3.5) {
+                analysis += '<p><strong>→ Velocidade de Processamento:</strong> Moderada. Tempo de processamento dentro da média.</p>';
+            } else {
+                analysis += '<p><strong>🐌 Velocidade de Processamento:</strong> Lenta. Pode indicar sobrecarga cognitiva ou necessidade de mais treino.</p>';
+            }
+            
+            // Análise por tipo de desafio
+            if (stats.stroopChallenges.attempts > 0) {
+                const stroopRate = (stats.stroopChallenges.success / stats.stroopChallenges.attempts) * 100;
+                if (stroopRate < 60) {
+                    analysis += '<p><strong>🌈 Efeito de Stroop:</strong> Forte interferência. Dificuldade em ignorar informação irrelevante (a palavra) para focar no relevante (a cor).</p>';
+                } else if (stroopRate < 80) {
+                    analysis += '<p><strong>🌈 Efeito de Stroop:</strong> Interferência moderada. Capacidade de inibição em desenvolvimento.</p>';
+                } else {
+                    analysis += '<p><strong>🌈 Efeito de Stroop:</strong> Boa resistência à interferência. Capacidade eficaz de focar em informação relevante.</p>';
+                }
+            }
+            
+            document.getElementById('clinical-analysis').innerHTML = analysis;
+        }
+        
+        function generateImprovementTips(successRate, stats) {
+            let tips = '';
+            
+            if (successRate < 70) {
+                tips += '<p>• <strong>Prática Regular:</strong> Repita este exercício diariamente (5-10 minutos) para fortalecer o controlo inibitório.</p>';
+            }
+            
+            if (stats.stroopChallenges.attempts > 0) {
+                const stroopRate = (stats.stroopChallenges.success / stats.stroopChallenges.attempts) * 100;
+                if (stroopRate < 70) {
+                    tips += '<p>• <strong>Treino Stroop:</strong> Foque em exercícios específicos de Stroop para melhorar a atenção seletiva.</p>';
+                }
+            }
+            
+            if (stats.inhibitionErrors > 3) {
+                tips += '<p>• <strong>Estratégia de Pausa:</strong> Antes de responder, pare um segundo para pensar. Não responda impulsivamente.</p>';
+            }
+            
+            const allTimes = [
+                ...stats.antonymChallenges.responseTimes,
+                ...stats.colorInverseChallenges.responseTimes,
+                ...stats.stroopChallenges.responseTimes
+            ];
+            const avgTime = allTimes.reduce((a, b) => a + b, 0) / allTimes.length;
+            
+            if (avgTime > 3.5) {
+                tips += '<p>• <strong>Velocidade:</strong> Tente aumentar gradualmente a sua velocidade de resposta mantendo a precisão.</p>';
+            }
+            
+            if (successRate >= 85) {
+                tips += '<p>• <strong>Excelente Desempenho!</strong> Continue a praticar regularmente para manter estas competências.</p>';
+                tips += '<p>• <strong>Desafio Extra:</strong> Tente aumentar a dificuldade jogando em ambientes com mais distrações.</p>';
+            }
+            
+            tips += '<p>• <strong>Aplicação Prática:</strong> Aplique estas competências no dia-a-dia: parar antes de reagir, pensar antes de falar, resistir a impulsos.</p>';
+            
+            document.getElementById('improvement-tips').innerHTML = tips;
+        }
+        
+        function restartGame() {
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
